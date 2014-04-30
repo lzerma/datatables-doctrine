@@ -42,7 +42,7 @@ class DefaultRepository extends EntityRepository {
                 for ($i = 0; $i < count($this->getAColumns()); $i++) {
                     if ($this->getAColumns()[$i]['type'] == "string") {
                         $qb->orWhere("LOWER(remove_accents(". $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
-                        ->setParameter("busca" . $i , $params['sSearch']);
+                        ->setParameter("busca" . $i , '%' . $params['sSearch'] . '%');
                     } else {
                         if (is_int($params['sSearch'])) {
                             $qb->orWhere($this->getAColumns()[$i]['campo'] . " = '" . $params['sSearch'] . "'");
@@ -77,7 +77,7 @@ class DefaultRepository extends EntityRepository {
                 if ($_GET['bSearchable_' . $i] == "true" && $params['sSearch_' . $i] != '') {
                     if ($this->getAColumns()[$i]['type'] == "string") {
                         $qb->orWhere("LOWER(remove_accents(". $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
-                        ->setParameter("busca" . $i , $params['sSearch_' . $i]);
+                        ->setParameter("busca" . $i , '%' . $params['sSearch_' . $i] . '%');
                     } else {
                         if (is_int($params['sSearch'])) {
                             $qb->andWhere($this->getAColumns()[$i]['campo'] . " = '" . $params['sSearch_' . $i] . "'");

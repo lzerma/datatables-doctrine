@@ -2,6 +2,7 @@
 
 namespace Datatables\Doctrine\Dql;
 
+
 use Doctrine\ORM\Query\AST\Functions\FunctionNode,
     Doctrine\ORM\Query\Lexer;
 
