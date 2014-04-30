@@ -36,7 +36,8 @@ class DefaultRepository extends EntityRepository {
         if ($_GET['sSearch'] != "") {
             for ($i = 0; $i < count($this->getAColumns()); $i++) {
                 if ($this->getAColumns()[$i]['type'] == "string") {
-                    $qb->orWhere("LOWER(" . $this->getAColumns()[$i]['campo'] . ") LIKE LOWER('%" . $params['sSearch'] . "%')");
+                    $qb->orWhere("LOWER(remove_accents(". $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
+                    ->setParameter("busca" . $i , $params['sSearch']);
                 } else {
                     if (is_int($params['sSearch'])) {
                         $qb->orWhere($this->getAColumns()[$i]['campo'] . " = '" . $params['sSearch'] . "'");
@@ -47,8 +48,8 @@ class DefaultRepository extends EntityRepository {
 
         // Select total
         $stmt = $this->getEntityManager()
-                ->getConnection()
-                ->prepare("SELECT count(a) FROM (" . $this->get_raw_sql($qb) . ") AS a");
+        ->getConnection()
+        ->prepare("SELECT count(a) FROM (" . $this->get_raw_sql($qb) . ") AS a");
 
         $stmt->execute();
 
@@ -70,7 +71,8 @@ class DefaultRepository extends EntityRepository {
         for ($i = 0; $i < count($this->getAColumns()); $i++) {
             if ($_GET['bSearchable_' . $i] == "true" && $params['sSearch_' . $i] != '') {
                 if ($this->getAColumns()[$i]['type'] == "string") {
-                    $qb->andWhere("LOWER(" . $this->getAColumns()[$i]['campo'] . ") LIKE LOWER('%" . $params['sSearch_' . $i] . "%')");
+                    $qb->orWhere("LOWER(remove_accents(". $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
+                    ->setParameter("busca" . $i , $params['sSearch_' . $i]);
                 } else {
                     if (is_int($params['sSearch'])) {
                         $qb->andWhere($this->getAColumns()[$i]['campo'] . " = '" . $params['sSearch_' . $i] . "'");
@@ -83,6 +85,7 @@ class DefaultRepository extends EntityRepository {
         $qb->setMaxResults($params['iDisplayLength']);
         $qb->setFirstResult($params['iDisplayStart']);
 
+        $rows = array();
         foreach ($qb->getQuery()->getResult() as $key => $value) {
             $aRow = $value->toArray();
 
@@ -97,7 +100,7 @@ class DefaultRepository extends EntityRepository {
             $rows[] = $row;
         }
 
-        
+
         $total = $stmt->fetchAll()[0]['count'];
         $output = array(
             "sEcho" => $params['sEcho'],
@@ -105,7 +108,7 @@ class DefaultRepository extends EntityRepository {
             "iTotalDisplayRecords" => $total,
             "iDisplayLength" => $params['iDisplayLength'],
             "aaData" => $rows
-        );
+            );
 
         return $output;
     }

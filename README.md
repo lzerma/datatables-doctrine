@@ -2,6 +2,42 @@ Datatables - Doctrine
 ============
 This module provides a interface for integration with twitter bootstrap.
 
+First you should create dd in your doctrine configuration this line
+```
+return array(
+    'doctrine' => array(
+        ...,
+        'configuration' => array(
+            'orm_default' => array(
+                'string_functions' => array(
+                    "remove_accents" => "Datatables\Doctrine\Dql\RemoveAccents"
+                )
+            ),
+        ),
+    )
+);
+```
+
+Create the function in postgres
+
+```
+-- Function: remove_accents(character varying)
+
+-- DROP FUNCTION remove_accents(character varying);
+
+CREATE OR REPLACE FUNCTION remove_accents(character varying)
+  RETURNS character varying AS
+$BODY$
+SELECT TRANSLATE($1, 'áéíóúàèìòùãõâêîôôäëïöüçÁÉÍÓÚÀÈÌÒÙÃÕÂÊÎÔÛÄËÏÖÜÇ', 'aeiouaeiouaoaeiooaeioucAEIOUAEIOUAOAEIOOAEIOUC')
+$BODY$
+  LANGUAGE sql VOLATILE
+  COST 100;
+ALTER FUNCTION remove_accents(character varying)
+  OWNER TO mpc2;
+``` 
+
+
+
 For work with your project, you must need extends the Datatables\Doctrine\DefaultRepository
 
 Example: YourRepository.php
