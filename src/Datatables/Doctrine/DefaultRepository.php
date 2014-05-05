@@ -37,12 +37,12 @@ class DefaultRepository extends EntityRepository {
 
     public function getDatatables(QueryBuilder $qb, array $params) {
 
-        if($this->getAColumns() != '' && $this->getAColumnsArray() != ''){
+        if ($this->getAColumns() != '' && $this->getAColumnsArray() != '') {
             if ($_GET['sSearch'] != "") {
                 for ($i = 0; $i < count($this->getAColumns()); $i++) {
                     if ($this->getAColumns()[$i]['type'] == "string") {
-                        $qb->orWhere("LOWER(remove_accents(". $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
-                        ->setParameter("busca" . $i , '%' . $params['sSearch'] . '%');
+                        $qb->orWhere("LOWER(remove_accents(" . $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
+                        ->setParameter("busca" . $i, '%' . $params['sSearch'] . '%');
                     } else {
                         if (is_int($params['sSearch'])) {
                             $qb->orWhere($this->getAColumns()[$i]['campo'] . " = '" . $params['sSearch'] . "'");
@@ -51,7 +51,7 @@ class DefaultRepository extends EntityRepository {
                 }
             }
 
-        // Select total
+            // Select total
             $stmt = $this->getEntityManager()
             ->getConnection()
             ->prepare("SELECT count(a) FROM (" . $this->get_raw_sql($qb) . ") AS a");
@@ -76,8 +76,8 @@ class DefaultRepository extends EntityRepository {
             for ($i = 0; $i < count($this->getAColumns()); $i++) {
                 if ($_GET['bSearchable_' . $i] == "true" && $params['sSearch_' . $i] != '') {
                     if ($this->getAColumns()[$i]['type'] == "string") {
-                        $qb->orWhere("LOWER(remove_accents(". $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
-                        ->setParameter("busca" . $i , '%' . $params['sSearch_' . $i] . '%');
+                        $qb->orWhere("LOWER(remove_accents(" . $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
+                        ->setParameter("busca" . $i, '%' . $params['sSearch_' . $i] . '%');
                     } else {
                         if (is_int($params['sSearch'])) {
                             $qb->andWhere($this->getAColumns()[$i]['campo'] . " = '" . $params['sSearch_' . $i] . "'");
@@ -96,8 +96,13 @@ class DefaultRepository extends EntityRepository {
 
                 $row = array();
                 for ($i = 0; $i < count($this->getAColumns()); $i++) {
-                    if (isset($this->getAColumnsArray()[$i]['html']) && trim($this->getAColumnsArray()[$i]['campo']) != '') {
-                        $row[] = str_replace("{campo}", $aRow[$this->getAColumnsArray()[$i]['campo']], $this->getAColumnsArray()[$i]['html']);
+                    if (isset($this->getAColumnsArray()[$i]['html'])) {
+                        $html = $this->getAColumnsArray()[$i]['html'];
+                        foreach ($aRow as $key => $value) {
+                            $html = str_replace("{" . $key . "}", $value, $html);
+                        }
+                        
+                        $row[] = $html;
                     } else {
                         $row[] = $aRow[$this->getAColumnsArray()[$i]['campo']];
                     }
@@ -116,11 +121,9 @@ class DefaultRepository extends EntityRepository {
                 );
 
             return $output;
-        }else{
+        } else {
             throw new \Exception("The value(getAColumns, getAColumnsArray) is required", 1);
         }
-
-        
     }
 
     public function getIDisplayStart() {
