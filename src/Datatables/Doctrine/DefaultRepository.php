@@ -5,7 +5,8 @@ namespace Datatables\Doctrine;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
-class DefaultRepository extends EntityRepository {
+class DefaultRepository extends EntityRepository
+{
 
     /**
      *
@@ -15,13 +16,13 @@ class DefaultRepository extends EntityRepository {
 
     /**
      *
-     * @var integer 
+     * @var integer
      */
     private $iDisplayLength = 10;
 
     /**
      *
-     * @var array 
+     * @var array
      * array[]['campo']
      * array[]['type']
      */
@@ -29,20 +30,31 @@ class DefaultRepository extends EntityRepository {
 
     /**
      *
-     * @var array 
+     * @var array
      * array[]['campo']
      * array[]['html']
      */
     private $aColumnsArray = null;
 
-    public function getDatatables(QueryBuilder $qb, array $params) {
+    /**
+     * @param QueryBuilder $qb
+     * @param array        $params
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function getDatatables(QueryBuilder $qb, array $params)
+    {
 
         if ($this->getAColumns() != '' && $this->getAColumnsArray() != '') {
             if ($_GET['sSearch'] != "") {
                 for ($i = 0; $i < count($this->getAColumns()); $i++) {
                     if ($this->getAColumns()[$i]['type'] == "string") {
-                        $qb->orWhere("LOWER(remove_accents(" . $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
-                        ->setParameter("busca" . $i, '%' . $params['sSearch'] . '%');
+                        $qb->orWhere(
+                            "LOWER(remove_accents(" . $this->getAColumns()[$i]['campo']
+                            . ")) LIKE LOWER(remove_accents(:busca" . $i . "))"
+                        )
+                            ->setParameter("busca" . $i, '%' . $params['sSearch'] . '%');
                     } else {
                         if (is_int($params['sSearch'])) {
                             $qb->orWhere($this->getAColumns()[$i]['campo'] . " = '" . $params['sSearch'] . "'");
@@ -53,8 +65,9 @@ class DefaultRepository extends EntityRepository {
 
             // Select total
             $stmt = $this->getEntityManager()
-            ->getConnection()
-            ->prepare("SELECT count(a) FROM (" . $this->get_raw_sql($qb) . ") AS a");
+                ->getConnection()
+                ->prepare("SELECT count(a) FROM (:sql) AS a")
+                ->setParameter("sql", $this->get_raw_sql($qb));
 
             $stmt->execute();
 
@@ -65,9 +78,15 @@ class DefaultRepository extends EntityRepository {
                     if ($params['bSortable_' . intval($params['iSortCol_' . $i])] == "true") {
                         if ($primeiro) {
                             $primeiro = false;
-                            $qb->orderBy($this->getAColumns()[intval($params['iSortCol_' . $i])]['campo'], $params['sSortDir_' . $i]);
+                            $qb->orderBy(
+                                $this->getAColumns()[intval($params['iSortCol_' . $i])]['campo'],
+                                $params['sSortDir_' . $i]
+                            );
                         } else {
-                            $qb->add($this->getAColumns()[intval($params['iSortCol_' . $i])]['campo'], $params['sSortDir_' . $i]);
+                            $qb->add(
+                                $this->getAColumns()[intval($params['iSortCol_' . $i])]['campo'],
+                                $params['sSortDir_' . $i]
+                            );
                         }
                     }
                 }
@@ -76,8 +95,11 @@ class DefaultRepository extends EntityRepository {
             for ($i = 0; $i < count($this->getAColumns()); $i++) {
                 if ($_GET['bSearchable_' . $i] == "true" && $params['sSearch_' . $i] != '') {
                     if ($this->getAColumns()[$i]['type'] == "string") {
-                        $qb->orWhere("LOWER(remove_accents(" . $this->getAColumns()[$i]['campo'] . ")) LIKE LOWER(remove_accents(:busca" . $i . "))")
-                        ->setParameter("busca" . $i, '%' . $params['sSearch_' . $i] . '%');
+                        $qb->orWhere(
+                            "LOWER(remove_accents(" . $this->getAColumns()[$i]['campo']
+                            . ")) LIKE LOWER(remove_accents(:busca" . $i . "))"
+                        )
+                            ->setParameter("busca" . $i, '%' . $params['sSearch_' . $i] . '%');
                     } else {
                         if (is_int($params['sSearch'])) {
                             $qb->andWhere($this->getAColumns()[$i]['campo'] . " = '" . $params['sSearch_' . $i] . "'");
@@ -101,7 +123,7 @@ class DefaultRepository extends EntityRepository {
                         foreach ($aRow as $key => $value) {
                             $html = str_replace("{" . $key . "}", $value, $html);
                         }
-                        
+
                         $row[] = $html;
                     } else {
                         $row[] = $aRow[$this->getAColumnsArray()[$i]['campo']];
@@ -113,12 +135,12 @@ class DefaultRepository extends EntityRepository {
 
             $total = $stmt->fetchAll()[0]['count'];
             $output = array(
-                "sEcho" => $params['sEcho'],
-                "iTotalRecords" => $total,
+                "sEcho"                => $params['sEcho'],
+                "iTotalRecords"        => $total,
                 "iTotalDisplayRecords" => $total,
-                "iDisplayLength" => $params['iDisplayLength'],
-                "aaData" => $rows
-                );
+                "iDisplayLength"       => $params['iDisplayLength'],
+                "aaData"               => $rows
+            );
 
             return $output;
         } else {
@@ -126,39 +148,78 @@ class DefaultRepository extends EntityRepository {
         }
     }
 
-    public function getIDisplayStart() {
+    /**
+     * @return int
+     */
+    public function getIDisplayStart()
+    {
         return $this->iDisplayStart;
     }
 
-    public function setIDisplayStart($iDisplayStart) {
+    /**
+     * @param $iDisplayStart
+     */
+    public function setIDisplayStart($iDisplayStart)
+    {
         $this->iDisplayStart = $iDisplayStart;
     }
 
-    public function getIDisplayLength() {
+    /**
+     * @return int
+     */
+    public function getIDisplayLength()
+    {
         return $this->iDisplayLength;
     }
 
-    public function setIDisplayLength($iDisplayLength) {
+    /**
+     * @param $iDisplayLength
+     */
+    public function setIDisplayLength($iDisplayLength)
+    {
         $this->iDisplayLength = $iDisplayLength;
     }
 
-    public function getAColumns() {
+    /**
+     * @return array
+     */
+    public function getAColumns()
+    {
         return $this->aColumns;
     }
 
-    public function setAColumns($aColumns) {
+    /**
+     * @param $aColumns
+     */
+    public function setAColumns($aColumns)
+    {
         $this->aColumns = $aColumns;
     }
 
-    public function getAColumnsArray() {
+    /**
+     * @return array
+     */
+    public function getAColumnsArray()
+    {
         return $this->aColumnsArray;
     }
 
-    public function setAColumnsArray($aColumnsArray) {
+    /**
+     * @param $aColumnsArray
+     */
+    public function setAColumnsArray($aColumnsArray)
+    {
         $this->aColumnsArray = $aColumnsArray;
     }
 
-    function get_raw_sql($query) {
+    /**
+     * @param $query
+     *
+     * @return string
+     * @throws \Exception
+     */
+    function get_raw_sql($query)
+    {
 
         if (!($query instanceof QueryBuilder)) {
             throw new \Exception('Not an instanse of a Doctrine Query');
@@ -169,8 +230,7 @@ class DefaultRepository extends EntityRepository {
             $query_params = $query->getParams();
             $params = $query_params['where'];
         } else {
-            $queryString = $query->getQuery()->getSQL();
-            ;
+            $queryString = $query->getQuery()->getSQL();;
             $params = $query->getQuery()->getParameters();
         }
 
@@ -197,5 +257,4 @@ class DefaultRepository extends EntityRepository {
 
         return $queryString;
     }
-
 }
